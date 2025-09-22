@@ -1,0 +1,29 @@
+LICENSE
+SPDX-License-Identifier: MIT
+1) Code License (MIT)
+Copyright (c) 2025 Wedefin Labs GmbH
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+2) Documentation & Media License (CC BY 4.0)
+Unless otherwise stated, all written documentation, screenshots, diagrams, and other non-code media in this repository are licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
+You are free to share and adapt those materials with attribution to “Wedefin” and a link to the project repository.
+Full license text: https://creativecommons.org/licenses/by/4.0/legalcode
+3) Third-Party Data & APIs (Not Covered by This License)
+This project fetches and displays data from third parties at runtime. That data is not licensed to you under the MIT or CC BY 4.0 licenses above. Your access and use of such data must comply with the providers’ terms and licenses, including (without limitation):
+Wedefin API — index prices, compositions, and stats (subject to Wedefin’s API terms).
+CoinGecko — market prices (e.g., ETH/USD) used for USD valuation (subject to CoinGecko terms).
+Blockchain RPC providers (e.g., Infura for Ethereum/Base/Arbitrum) — used for on-chain reads (subject to provider terms).
+You are responsible for ensuring that any caching, redistribution, or commercial use of third-party data complies with those providers’ terms. This repository’s license does not convey any rights to third-party data.
+4) Trademarks
+“Wedefin”, the Wedefin logo, and all related names and marks are trademarks or service marks of their respective owners.
+This license does not grant any rights to use trademarks, logos, or brand elements except for fair use in attribution.
+5) Third-Party Dependencies
+This project depends on open-source libraries (e.g., Streamlit, pandas, requests, Altair). Those components are licensed under their respective licenses. See each project’s license for details.
+6) Contributions
+By submitting a contribution (code, documentation, or media), you agree to license your contribution as follows:
+Code under the MIT License (Section 1).
+Documentation/media under CC BY 4.0 (Section 2).
+If you cannot agree to these terms, please open an issue before submitting a PR.
+7) No Warranty; Limitation of Liability
+The project is provided “AS IS”. See the MIT disclaimer above. Displayed values may depend on third-party services; outages or inaccuracies in upstream data are outside this project’s control.
