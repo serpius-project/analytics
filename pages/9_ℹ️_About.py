@@ -20,6 +20,7 @@ Endpoints are fetched on demand with light caching. If something looks stale, re
 - Time series are aligned to **one point per day (last value of the day)** for consistent comparisons.
 
 ### Updates
+- **2025-09-30** — Treasury Updated.
 - **2025-09-22** — Dashboard Deployment.
 
 ### Contact
@@ -273,7 +274,6 @@ with st.expander("What this page shows"):
 with st.expander("Left-sidebar controls"):
     st.markdown("""
 - **Infura Project ID:** Paste your **Infura Project ID** (API key) to enable RPC calls. The **Fetch balances** button becomes active once a key is present.
-- **WEDT token address:** ERC-20 contract on **Ethereum** used to read the protocol-owner’s WEDT balance (revenue).
 - **Fetch balances:** Click to query chains via Infura and compute USD values.
 """)
 
