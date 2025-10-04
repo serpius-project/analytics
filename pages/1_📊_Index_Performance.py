@@ -14,7 +14,7 @@ BASE_URL = "https://app.wedefin.com/wedx_price_{chain}_v1.json"
 # -------------------------------
 with st.sidebar:
     st.header("⚙️ Controls")
-    selected_chains = st.multiselect("Select chains", CHAINS, default=["ethereum"])
+    selected_chains = st.multiselect("Select chains", CHAINS, default=["base"])
 
     preset = st.selectbox(
         "Period preset",

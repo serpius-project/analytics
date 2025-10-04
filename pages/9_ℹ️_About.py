@@ -20,6 +20,7 @@ Endpoints are fetched on demand with light caching. If something looks stale, re
 - Time series are aligned to **one point per day (last value of the day)** for consistent comparisons.
 
 ### Updates
+- **2025-10-04** — Treasury is now public. Set default chain to Base.
 - **2025-09-30** — Treasury Updated.
 - **2025-09-22** — Dashboard Deployment.
 

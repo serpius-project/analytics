@@ -6,7 +6,7 @@ from datetime import date, timedelta
 st.set_page_config(page_title="Wedefin — Index Composition", page_icon="🧭", layout="wide")
 st.title("🧭 Wedefin — Index Composition and Statistics Over Time")
 
-CHAINS = ["ethereum", "base", "arbitrum"]
+CHAINS = ["base", "ethereum", "arbitrum"]
 WEDX_URL = "https://app.wedefin.com/wedx_price_{chain}_v1.json"
 EXC_URL  = "https://app.wedefin.com/exchange_data.json"
 
@@ -71,7 +71,7 @@ def build_price_map(exc: dict, chain: str) -> dict:
 
     SYMBOL_OVERRIDES = {
         "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": "WETH",  # Ethereum
-        "0x4200000000000000000000000000000000000006": "WETH",  # Base/Optimism
+        "0x4200000000000000000000000000000000000006": "WETH",  # Base
         "0x82af49447d8a07e3bd95bd0d56f35241523fbab1": "WETH",  # Arbitrum
     }
 

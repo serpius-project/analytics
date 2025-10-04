@@ -16,31 +16,24 @@ TREASURY_CONTRACTS = {
 }
 
 PROTOCOL_OWNER = "0x383Ea62B67fe18CF201E065DB93Cb830D2cD3677"
-
-WEDT_TOKENS = {
-    "Ethereum": "0x9cd8d94f69ed3ca784231e162905745c436d22bc",
-    "Base":     "0x9b2ae23a9693475f0588e09e814d6977821c1492",
-    "Arbitrum": "0x5f2d9c9619807182a9c3353ff67fd695b6d1b892",
-}
+WEDT_TOKENS = TREASURY_CONTRACTS
 
 # -----------------------------------
-# Sidebar controls
+# Infura key
 # -----------------------------------
-with st.sidebar:
-    st.header("⚙️ Settings")
-    default_key = st.secrets.get("INFURA_KEY", os.getenv("INFURA_KEY", ""))
-    infura_key = st.text_input(
-        "Infura Project ID",
-        value=default_key,
-        type="password",
-        help="Paste your own Infura key (Project ID). Optionally store as INFURA_KEY in secrets.",
-    )
-
-    fetch_now = st.button("Fetch balances", type="primary", disabled=not bool(infura_key))
+infura_key = st.secrets.get("INFURA_KEY", os.getenv("INFURA_KEY", ""))
 
 if not infura_key:
-    st.info("Enter your Infura Project ID in the sidebar to fetch balances.")
+    st.error("❌ Missing Infura key in Streamlit secrets. Please add it to `.streamlit/secrets.toml`.")
     st.stop()
+
+# -----------------------------------
+# Sidebar info
+# -----------------------------------
+with st.sidebar:
+    st.header("⚙️ Fetch")
+    st.caption("Click to fetch balances.")
+    fetch_now = st.button("🔄 Fetch balances", type="primary")
 
 # -----------------------------------
 # RPC helpers
