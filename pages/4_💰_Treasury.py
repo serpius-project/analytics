@@ -24,16 +24,21 @@ WEDT_TOKENS = TREASURY_CONTRACTS
 infura_key = st.secrets.get("INFURA_KEY", os.getenv("INFURA_KEY", ""))
 
 if not infura_key:
-    st.error("❌ Missing Infura key in Streamlit secrets. Please add it to `.streamlit/secrets.toml`.")
+    st.error("❌ Missing Infura key in Streamlit secrets. Please add it to `.streamlit/secrets.toml` or the Cloud 'Edit secrets' UI.")
     st.stop()
 
 # -----------------------------------
-# Sidebar info
+# Sidebar
 # -----------------------------------
 with st.sidebar:
     st.header("⚙️ Fetch")
-    st.caption("Click to fetch balances.")
-    fetch_now = st.button("🔄 Fetch balances", type="primary")
+    st.caption("Balances load automatically. Use refresh to force an update.")
+    if st.button("🔄 Refresh balances"):
+        get_eth_balance.clear()
+        erc20_decimals.clear()
+        erc20_balance_of.clear()
+        get_eth_price_usd.clear()
+        st.rerun()
 
 # -----------------------------------
 # RPC helpers
@@ -91,81 +96,88 @@ def get_eth_price_usd() -> float:
     return float(r.json()["ethereum"]["usd"])
 
 # -----------------------------------
-# Fetch on demand
+# Fetch + assemble
 # -----------------------------------
-if fetch_now:
-    st.session_state["_treasury_fetch"] = True
-
-if not st.session_state.get("_treasury_fetch"):
-    st.stop()
-
-rpcs = rpc_map(infura_key)
-errors = []
-treasury_rows = []
-owner_eth_rows = []
-owner_wedt_rows = []
-
-with st.spinner("Querying chains via Infura…"):
-
-    for chain, addr in TREASURY_CONTRACTS.items():
-        try:
-            bal = get_eth_balance(rpcs[chain], addr)
-            treasury_rows.append({"section": "Treasury", "source": "Treasury ETH", "chain": chain, "address": addr, "amount": bal})
-        except Exception as e:
-            errors.append(f"{chain} (treasury): {e}")
-
+def compute_balances():
+    rpcs = rpc_map(infura_key)
+    errors: list[str] = []
+    treasury_rows, owner_eth_rows, owner_wedt_rows = [], [], []
     owner_eth_total = 0.0
-    for chain in ("Ethereum", "Base", "Arbitrum"):
-        try:
-            bal = get_eth_balance(rpcs[chain], PROTOCOL_OWNER)
-            owner_eth_total += float(bal)
-            owner_eth_rows.append({"section": "Protocol Revenue", "source": "Owner ETH", "chain": chain, "address": PROTOCOL_OWNER, "amount": bal})
-        except Exception as e:
-            errors.append(f"{chain} (owner ETH): {e}")
 
-    wedt_totals = {}
-    for chain, token_addr in WEDT_TOKENS.items():
-        try:
-            dec = erc20_decimals(rpcs[chain], token_addr, 18)
-            bal = erc20_balance_of(rpcs[chain], token_addr, PROTOCOL_OWNER, decimals_hint=dec)
-            wedt_totals[chain] = float(bal)
-            owner_wedt_rows.append({"section": "Protocol Revenue", "source": "WEDT", "chain": chain, "address": token_addr, "amount": bal})
-        except Exception as e:
-            errors.append(f"{chain} (WEDT): {e}")
+    with st.spinner("Querying chains via Infura…"):
+        for chain, addr in TREASURY_CONTRACTS.items():
+            try:
+                bal = get_eth_balance(rpcs[chain], addr)
+                treasury_rows.append({
+                    "section": "Treasury", "source": "Treasury ETH",
+                    "chain": chain, "address": addr, "amount": bal
+                })
+            except Exception as e:
+                errors.append(f"{chain} (treasury): {e}")
+
+        for chain in ("Ethereum", "Base", "Arbitrum"):
+            try:
+                bal = get_eth_balance(rpcs[chain], PROTOCOL_OWNER)
+                owner_eth_total += float(bal)
+                owner_eth_rows.append({
+                    "section": "Protocol Revenue", "source": "Owner ETH",
+                    "chain": chain, "address": PROTOCOL_OWNER, "amount": bal
+                })
+            except Exception as e:
+                errors.append(f"{chain} (owner ETH): {e}")
+
+        for chain, token_addr in WEDT_TOKENS.items():
+            try:
+                dec = erc20_decimals(rpcs[chain], token_addr, 18)
+                bal = erc20_balance_of(rpcs[chain], token_addr, PROTOCOL_OWNER, decimals_hint=dec)
+                owner_wedt_rows.append({
+                    "section": "Protocol Revenue", "source": "WEDT",
+                    "chain": chain, "address": token_addr, "amount": bal
+                })
+            except Exception as e:
+                errors.append(f"{chain} (WEDT): {e}")
+
+    df_treasury   = pd.DataFrame(treasury_rows)
+    df_owner_eth  = pd.DataFrame(owner_eth_rows)
+    df_owner_wedt = pd.DataFrame(owner_wedt_rows)
+
+    try:
+        eth_usd = get_eth_price_usd()
+    except Exception as e:
+        eth_usd = float("nan")
+        errors.append(f"ETH price: {e}")
+
+    return df_treasury, df_owner_eth, df_owner_wedt, owner_eth_total, eth_usd, errors
+
+df_treasury, df_owner_eth, df_owner_wedt, owner_eth_total, eth_usd, errors = compute_balances()
 
 if errors:
     st.warning("\n".join(errors))
-
-df_treasury   = pd.DataFrame(treasury_rows)
-df_owner_eth  = pd.DataFrame(owner_eth_rows)
-df_owner_wedt = pd.DataFrame(owner_wedt_rows)
 
 if df_treasury.empty and df_owner_eth.empty and df_owner_wedt.empty:
     st.error("Could not fetch any balances.")
     st.stop()
 
-try:
-    eth_usd = get_eth_price_usd()
-except Exception as e:
-    eth_usd = float("nan")
-    st.warning(f"Failed to fetch ETH price: {e}")
-
+# -----------------------------------
+# Value in USD columns
+# -----------------------------------
 for df in (df_treasury, df_owner_eth, df_owner_wedt):
     if not df.empty:
         df["usd_value"] = df["amount"] * eth_usd
 
+# Totals
 treasury_eth_total = float(df_treasury["amount"].sum()) if not df_treasury.empty else 0.0
 treasury_usd_total = float(df_treasury["usd_value"].sum()) if not df_treasury.empty else 0.0
 
 owner_eth_total_usd = owner_eth_total * eth_usd if pd.notna(eth_usd) else float("nan")
-wedt_total_units = sum(df_owner_wedt["amount"]) if not df_owner_wedt.empty else 0.0
+wedt_total_units = float(df_owner_wedt["amount"].sum()) if not df_owner_wedt.empty else 0.0
 wedt_total_usd   = wedt_total_units * eth_usd if pd.notna(eth_usd) else float("nan")
 
-protocol_revenue_eth = (owner_eth_total if pd.notna(owner_eth_total) else 0.0) + (wedt_total_units if pd.notna(wedt_total_units := wedt_total_units) else 0.0)
+protocol_revenue_eth = (owner_eth_total if pd.notna(owner_eth_total) else 0.0) + (wedt_total_units if pd.notna(wedt_total_units) else 0.0)
 protocol_revenue_usd = protocol_revenue_eth * eth_usd if pd.notna(eth_usd) else float("nan")
 
 # -----------------------------------
-# KPIs (clean)
+# KPIs
 # -----------------------------------
 r1c1, r1c2 = st.columns(2)
 r1c1.metric("Protocol Profit (ETH)", f"{protocol_revenue_eth:,.6f}" if pd.notna(protocol_revenue_eth) else "—")
@@ -182,27 +194,21 @@ st.markdown("---")
 # -----------------------------------
 st.subheader("Breakdown")
 
+df_revenue = pd.concat([df_owner_eth, df_owner_wedt], ignore_index=True)
+
 col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("**Revenue (by chain)**")
     if not df_treasury.empty:
-        st.dataframe(
-            df_treasury.sort_values("chain"),
-            use_container_width=True
-        )
+        st.dataframe(df_treasury.sort_values("chain"), use_container_width=True)
     else:
         st.info("No revenue balances found.")
 
 with col2:
     st.markdown("**Profit (by chain)**")
-    # Combine Owner ETH and WEDT rows
-    df_revenue = pd.concat([df_owner_eth, df_owner_wedt], ignore_index=True)
     if not df_revenue.empty:
-        st.dataframe(
-            df_revenue.sort_values(["source", "chain"]),
-            use_container_width=True
-        )
+        st.dataframe(df_revenue.sort_values(["source", "chain"]), use_container_width=True)
     else:
         st.info("No profit balances found.")
 
@@ -212,7 +218,7 @@ with col2:
 df_display = pd.concat(
     [
         df_treasury.assign(section="Revenue"),
-        df_revenue.assign(section="Profit") if 'df_revenue' in locals() and not df_revenue.empty else pd.DataFrame()
+        df_revenue.assign(section="Profit") if not df_revenue.empty else pd.DataFrame()
     ],
     ignore_index=True
 )
@@ -232,6 +238,7 @@ summary = pd.DataFrame([
     {"metric": "ETH Profit", "value": owner_eth_total},
     {"metric": "WEDT Profit", "value": wedt_total_units},
 ])
+
 st.download_button(
     "⬇️ Download summary CSV",
     summary.to_csv(index=False).encode("utf-8"),
