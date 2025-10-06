@@ -20,6 +20,7 @@ Endpoints are fetched on demand with light caching. If something looks stale, re
 - Time series are aligned to **one point per day (last value of the day)** for consistent comparisons.
 
 ### Updates
+- **2025-10-06** — Changed Treasury page to Accounting page.
 - **2025-10-04** — Treasury is now public. Set default chain to Base.
 - **2025-09-30** — Treasury Updated.
 - **2025-09-22** — Dashboard Deployment.
@@ -117,7 +118,6 @@ with st.expander("What this page shows"):
   - **Event markers:** Flags days where the largest single-token weight change crosses your chosen threshold.
 """)
 
-
 with st.expander("Left-sidebar controls"):
     st.markdown("""
 - **Chain:** Choose `ethereum`, `base`, or `arbitrum`.
@@ -183,7 +183,7 @@ with st.expander("Pricing tolerance & data quality tips"):
     st.markdown("""
 - **Nearest price match:** If the token’s nearest price is **outside** your tolerance window, that row is **dropped**.  
   - Increase tolerance to include more points, but avoid backfilling across long gaps.
-- **Missing prices warning:** The banner shows how many rows were excluded—if high, revisit tolerance or confirm token coverage in `exchange_data.json`.
+- **Missing prices warning:** The banner shows how many rows were excluded—if high, revisit tolerance or confirm token coverage.
 - **Symbol overrides:** Canonical **WETH** addresses are normalized across chains; unknown tokens fall back to a short address label.
 - **One snapshot per day:** By design, we keep the **last** reading each day to align with daily price matching.
 """)
@@ -195,6 +195,8 @@ with st.expander("Downloads & reproducibility"):
 - **⬇️ Download daily composition (with prices):** Per-token/day with balances and matched prices.
 - **Repro note:** Changing **Top-N**, **tolerance**, or **filters** changes the charts and CSVs; include these settings when sharing results.
 """)
+
+st.markdown("---")
 
 # =========================================
 # Stats Snapshot — User Guide
@@ -213,7 +215,7 @@ with st.expander("What this page shows"):
   - **Stacked TVL:** Splits TVL into **Index TVL** vs **Pro TVL** per chain.
 - **Data table + download:** View the exact values and export to CSV.
   
-**Field definitions** (columns from `stats_data.json`):
+**Field definitions**:
 - `total_users` — all users on the chain.
 - `index_users` — users of the Index product.
 - `pro_users` — users of the Pro product.
@@ -258,50 +260,42 @@ with st.expander("Tips"):
 
 st.markdown("---")
 # =========================================
-# Treasury & Revenue — User Guide
+# Accounting — User Guide
 # =========================================
 st.subheader("💰 Treasury & Revenue")
 
 with st.expander("What this page shows"):
     st.markdown("""
-- **Goal:** Display on-chain ETH balances held by Wedefin treasury contracts across supported chains, plus **protocol revenue** measured as the WEDT token balance held by the protocol owner (on Ethereum).
-- **KPIs (top):**
-  - **Protocol Revenue (ETH / USD):** WEDT units (on Ethereum) priced in ETH (see notes below).
-  - **Treasury Total (ETH / USD):** Sum of ETH balances across treasury contracts and chains.
-- **Chart:** Bars of **Treasury Value (USD)** per chain.
-- **Details table:** Per-chain contract address, ETH balance, and USD value, plus a row for **WEDT (revenue)**.
-  """)
+- **Goal:** Show live **on-chain ETH balances** for Wedefin treasury contracts across Ethereum, Base, and Arbitrum, and surface **Protocol KPIs** (Revenue & Profit) sourced from Wedefin’s stats endpoint.
+- **KPIs (top):**  
+  - **Protocol Profit (ETH / USD):** Taken from `totals.total_profit`, then converted to USD with the live ETH/USD rate.  
+  - **Protocol Revenue (ETH / USD):** Taken from `totals.total_revenue`, then converted to USD.  
+  - If the endpoint is unavailable, KPIs gracefully **fallback** to locally computed balances (owner ETH + WEDT).
+- **Chart:** **Grouped bars** (ETH) for **Revenue vs Profit by chain**, using the `"chains"` breakdown from the stats endpoint.
+- **Details tables:**  
+  - **Treasury Balance:** Per-chain treasury **address**, **ETH amount**, and **USD value**.  
+  - **Protocol Balance:** Protocol owner’s **ETH** and **WEDT** balances per chain (Ethereum, Base, Arbitrum), with **address**, **amount**, and **USD value**.  
+""")
 
 with st.expander("Left-sidebar controls"):
     st.markdown("""
-- **Infura Project ID:** Paste your **Infura Project ID** (API key) to enable RPC calls. The **Fetch balances** button becomes active once a key is present.
-- **Fetch balances:** Click to query chains via Infura and compute USD values.
+- **Balances auto-load** on page open.  
+- **🔄 Refresh balances:** Clears caches (RPC calls, token decimals, balances, price) and re-runs the page.
 """)
 
-with st.expander("How balances & revenue are fetched (under the hood)"):
+with st.expander("How data is fetched (under the hood)"):
     st.markdown("""
-- **RPC endpoints (via Infura):**
-  - Ethereum → `https://mainnet.infura.io/v3/{PROJECT_ID}`
-  - Base → `https://base-mainnet.infura.io/v3/{PROJECT_ID}`
+- **RPC (via Infura):**
+  - Ethereum → `https://mainnet.infura.io/v3/{PROJECT_ID}`  
+  - Base → `https://base-mainnet.infura.io/v3/{PROJECT_ID}`  
   - Arbitrum → `https://arbitrum-mainnet.infura.io/v3/{PROJECT_ID}`
-- **Treasury ETH:** For each chain’s treasury contract, the app calls
-  - `eth_getBalance(contract_address, "latest")` → **ETH balance (wei)** → converted to **ETH**.
-- **WEDT revenue (Ethereum only):**
-  - `decimals()` via `0x313ce567` to get token decimals (fallback = 18 on failure).
-  - `balanceOf(PROTOCOL_OWNER)` via `0x70a08231` to read **WEDT units**.
-- **Pricing:**
-  - **ETH/USD** fetched from CoinGecko *simple price* endpoint.
-  - **USD values** = `ETH_balance × ETH/USD`, and `WEDT_units × ETH/USD` (see pricing note above).
-- **Caching:** RPC calls and prices use short TTL caches to reduce latency and rate-limit pressure.
-""")
-
-with st.expander("Getting an Infura key (Project ID)"):
-    st.markdown("""
-1. **Create/login** at **Infura** (free tier available).
-2. **Create a new project** and open it to see credentials.
-3. **Copy the _Project ID_** (a hex string). This is the API key used in the URLs above.
-4. **Paste** it in the sidebar field **or** store it securely as a secret (recommended).
-5. **Free-tier limits:** If you see 429 (rate limit) or intermittent failures, wait or upgrade your plan.
+- **Treasury ETH:** `eth_getBalance(treasury_address, "latest")` → **wei** → **ETH**.
+- **Protocol balances:**  
+  - **Owner ETH:** `eth_getBalance(PROTOCOL_OWNER, "latest")` on each chain.  
+  - **WEDT:** `decimals()` (`0x313ce567`) then `balanceOf(PROTOCOL_OWNER)` (`0x70a08231`) on each chain’s WEDT token.
+- **Pricing:** ETH/USD from CoinGecko (simple price). USD = **ETH × ETH/USD** (and we price WEDT in ETH equivalence per your display logic).
+- **Caching:** Short TTLs to reduce latency & rate limits  
+  - Balances: ~120s; Token decimals / ERC-20 balances / ETH price: ~300s; Wedefin KPIs: ~120s.
 """)
 
 
