@@ -34,12 +34,12 @@ with st.sidebar:
     st.header("⚙️ Fetch")
     st.caption("Balances load automatically. Use refresh to force an update.")
     if st.button("🔄 Refresh balances"):
-        get_eth_balance.clear()
-        erc20_decimals.clear()
-        erc20_balance_of.clear()
-        get_eth_price_usd.clear()
+        st.cache_data.clear()
+        try:
+            st.cache_resource.clear()
+        except Exception:
+            pass
         st.rerun()
-
 # -----------------------------------
 # RPC helpers
 # -----------------------------------
@@ -270,14 +270,14 @@ col1, col2 = st.columns(2)
 with col1:
     st.markdown("**Treasury Balance**")
     if not df_treasury_disp.empty:
-        st.dataframe(df_treasury_disp.sort_values("chain"), use_container_width=True)
+        st.dataframe(df_treasury_disp.sort_values("chain"), width="stretch")
     else:
         st.info("No treasury balances found.")
 
 with col2:
     st.markdown("**Protocol Balance**")
     if not df_revenue_disp.empty:
-        st.dataframe(df_revenue_disp.sort_values(["chain", "address"]), use_container_width=True)
+        st.dataframe(df_revenue_disp.sort_values(["chain", "address"]), width="stretch")
     else:
         st.info("No protocol balances found.")
 
