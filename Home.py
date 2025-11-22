@@ -9,11 +9,11 @@ st.caption("Transparent, live metrics across chains.")
 
 st.markdown("""
 ### What’s inside
-- **Index Performance** — financial performance of the indices with relevant risk metrics.
-- **Stats Snapshot** — users & TVL per chain.
-- **Treasury** — status of treasury balances and protocol revenue.
-- **Index Rebalancing** — Index composition and metrics over time.
-- **About** — information about the dashboard and its sources.
+- **Index Performance** — Financial performance of the indices with relevant risk metrics.
+- **Index Composition** — Index asset allocation and metrics over time.
+- **Stats Snapshot** — Users & TVL per chain.
+- **Accounting** — Status of treasury balances and protocol revenue.
+- **About** — Information about the dashboard and its sources.
 """)
 
 st.markdown("---")
